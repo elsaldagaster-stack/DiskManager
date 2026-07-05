@@ -5,5 +5,5 @@ public class DuplicateGroup
     public string Hash { get; set; } = string.Empty;
     public long FileSize { get; set; }
     public List<string> Paths { get; set; } = new();
-    public long WastedBytes => FileSize * (Paths.Count - 1);
+    public long WastedBytes => Math.Max(0, FileSize * (Paths.Count - 1));
 }
