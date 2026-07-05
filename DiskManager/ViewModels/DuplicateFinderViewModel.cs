@@ -73,7 +73,7 @@ public partial class DuplicateFinderViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private void DeleteSelected()
+    private async Task DeleteSelectedAsync()
     {
         var toDelete = Groups
             .SelectMany(g => g.SelectedPaths)
@@ -87,6 +87,7 @@ public partial class DuplicateFinderViewModel : ObservableObject, IDisposable
             return;
 
         int deleted = 0;
+        var errors = new List<string>();
         foreach (var path in toDelete)
         {
             try
@@ -94,10 +95,14 @@ public partial class DuplicateFinderViewModel : ObservableObject, IDisposable
                 FileSystem.DeleteFile(path, UIOption.OnlyErrorDialogs, RecycleOption.SendToRecycleBin);
                 deleted++;
             }
-            catch (Exception ex) { StatusText = $"Error eliminando {Path.GetFileName(path)}: {ex.Message}"; }
+            catch (Exception ex) { errors.Add($"{System.IO.Path.GetFileName(path)}: {ex.Message}"); }
         }
-        StatusText = $"{deleted} archivo(s) enviados a la Papelera.";
-        _ = SearchAsync();
+
+        StatusText = errors.Count == 0
+            ? $"{deleted} archivo(s) enviados a la Papelera."
+            : $"{deleted} eliminados, {errors.Count} errores: {errors[0]}";
+
+        await SearchAsync();
     }
 
     private static string FormatSize(long bytes) => bytes switch
@@ -128,7 +133,7 @@ public partial class DuplicateGroupViewModel : ObservableObject
 
     private static DateTime TryGetDate(string path)
     {
-        try { return File.GetLastWriteTime(path); }
+        try { return File.GetCreationTime(path); }
         catch { return DateTime.MaxValue; }
     }
 }

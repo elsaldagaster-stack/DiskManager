@@ -28,6 +28,7 @@
     <!-- Progress bar (visible only when searching) -->
     <ProgressBar DockPanel.Dock="Top" Height="4"
                  IsIndeterminate="{Binding IsSearching}"
+                 Value="{Binding ProgressValue}"
                  Visibility="{Binding IsSearching, Converter={StaticResource BoolVis}}"
                  Foreground="{DynamicResource AccentBrush}"/>
 
