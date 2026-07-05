@@ -65,8 +65,10 @@ public class FileSystemService : IFileSystemService
                 {
                     var info = new FileInfo(f);
                     return new FileItem(info.Name, info.FullName, info.Length, info.LastWriteTime, false);
-                });
+                })
+                .ToList();
         }
         catch (UnauthorizedAccessException) { return Enumerable.Empty<FileItem>(); }
+        catch (IOException) { return Enumerable.Empty<FileItem>(); }
     }
 }
