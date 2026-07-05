@@ -7,7 +7,7 @@ using System.IO;
 
 namespace DiskManager.ViewModels;
 
-public partial class DiskAnalyzerViewModel : ObservableObject
+public partial class DiskAnalyzerViewModel : ObservableObject, IDisposable
 {
     private readonly IDiskAnalyzerService _analyzer;
     private CancellationTokenSource? _cts;
@@ -36,10 +36,18 @@ public partial class DiskAnalyzerViewModel : ObservableObject
         if (AvailableDrives.Any()) SelectedDrive = AvailableDrives[0];
     }
 
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = null;
+    }
+
     [RelayCommand]
     private async Task ScanAsync()
     {
         _cts?.Cancel();
+        _cts?.Dispose();
         _cts = new CancellationTokenSource();
 
         IsScanning = true;
@@ -50,8 +58,10 @@ public partial class DiskAnalyzerViewModel : ObservableObject
 
         try
         {
-            DriveUsage = _analyzer.GetDriveUsage(SelectedDrive.TrimEnd('\\', ':'));
-            RootNode = await _analyzer.ScanAsync(SelectedDrive, progress, _cts.Token);
+            var driveLetter = SelectedDrive.TrimEnd('\\', '/', ':');
+            var rootPath = driveLetter + ":\\";
+            DriveUsage = _analyzer.GetDriveUsage(driveLetter);
+            RootNode = await _analyzer.ScanAsync(rootPath, progress, _cts.Token);
             TopFolders = new ObservableCollection<FolderNode>(
                 RootNode.Children.OrderByDescending(c => c.TotalSize).Take(20));
             ProgressText = "Listo.";
@@ -69,6 +79,6 @@ public partial class DiskAnalyzerViewModel : ObservableObject
     {
         if (node is null) return;
         try { System.Diagnostics.Process.Start("explorer.exe", node.FullPath); }
-        catch { }
+        catch (Exception ex) { ProgressText = $"Error: {ex.Message}"; }
     }
 }
