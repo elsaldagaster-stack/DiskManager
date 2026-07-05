@@ -64,7 +64,9 @@ public partial class DiskAnalyzerViewModel : ObservableObject, IDisposable
             RootNode = await _analyzer.ScanAsync(rootPath, progress, _cts.Token);
             TopFolders = new ObservableCollection<FolderNode>(
                 RootNode.Children.OrderByDescending(c => c.TotalSize).Take(20));
-            ProgressText = "Listo.";
+            ProgressText = RootNode.SkippedFolders > 0
+                ? $"Listo. {RootNode.SkippedFolders} carpeta(s) inaccesible(s) omitida(s)."
+                : "Listo.";
         }
         catch (OperationCanceledException) { ProgressText = "Cancelado."; }
         catch (Exception ex) { ProgressText = $"Error: {ex.Message}"; }

@@ -19,7 +19,12 @@ public class DuplicateFinderService : IDuplicateFinderService
         string rootPath, DuplicateMethod method,
         IProgress<int>? progress, CancellationToken ct)
     {
-        var files = Directory.EnumerateFiles(rootPath, "*", SearchOption.AllDirectories)
+        var options = new EnumerationOptions
+        {
+            RecurseSubdirectories = true,
+            IgnoreInaccessible = true
+        };
+        var files = Directory.EnumerateFiles(rootPath, "*", options)
             .Where(f => { try { return new FileInfo(f).Length > 0; } catch { return false; } })
             .ToList();
 

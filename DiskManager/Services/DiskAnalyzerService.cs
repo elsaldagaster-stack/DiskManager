@@ -37,12 +37,13 @@ public class DiskAnalyzerService : IDiskAnalyzerService
                 {
                     var child = ScanDirectory(dir, progress, ct);
                     node.TotalSize += child.TotalSize;
+                    node.SkippedFolders += child.SkippedFolders;
                     node.Children.Add(child);
                 }
-                catch (UnauthorizedAccessException) { }
+                catch (UnauthorizedAccessException) { node.SkippedFolders++; }
             }
         }
-        catch (UnauthorizedAccessException) { }
+        catch (UnauthorizedAccessException) { node.SkippedFolders++; }
 
         return node;
     }

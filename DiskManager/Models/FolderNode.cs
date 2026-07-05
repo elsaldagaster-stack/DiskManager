@@ -6,4 +6,5 @@ public class FolderNode
     public string FullPath { get; set; } = string.Empty;
     public long TotalSize { get; set; }
     public List<FolderNode> Children { get; set; } = new();
+    public int SkippedFolders { get; set; }
 }
