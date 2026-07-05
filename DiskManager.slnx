@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="DiskManager.Tests/DiskManager.Tests.csproj" />
+  <Project Path="DiskManager/DiskManager.csproj" />
+</Solution>
