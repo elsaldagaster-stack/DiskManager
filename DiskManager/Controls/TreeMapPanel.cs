@@ -10,7 +10,8 @@ public class TreeMapPanel : Panel
 {
     public static readonly DependencyProperty RootNodeProperty =
         DependencyProperty.Register(nameof(RootNode), typeof(FolderNode), typeof(TreeMapPanel),
-            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsArrange));
+            new FrameworkPropertyMetadata(null,
+                FrameworkPropertyMetadataOptions.AffectsArrange | FrameworkPropertyMetadataOptions.AffectsRender));
 
     public static readonly DependencyProperty NodeClickCommandProperty =
         DependencyProperty.Register(nameof(NodeClickCommand), typeof(ICommand), typeof(TreeMapPanel));
@@ -27,15 +28,39 @@ public class TreeMapPanel : Panel
         set => SetValue(NodeClickCommandProperty, value);
     }
 
-    private static readonly Brush[] _palette =
+    private static readonly Brush[] _palette = InitPalette();
+    private static readonly Pen _borderPen = CreateBorderPen();
+    private static readonly Brush _textBrush = CreateTextBrush();
+    private static readonly Typeface _typeface = new("Segoe UI");
+
+    private static Brush[] InitPalette()
     {
-        new SolidColorBrush(Color.FromRgb(0x89, 0xB4, 0xFA)),
-        new SolidColorBrush(Color.FromRgb(0xCB, 0xA6, 0xF7)),
-        new SolidColorBrush(Color.FromRgb(0xF3, 0x8B, 0xA8)),
-        new SolidColorBrush(Color.FromRgb(0xA6, 0xE3, 0xA1)),
-        new SolidColorBrush(Color.FromRgb(0xF9, 0xE2, 0xAF)),
-        new SolidColorBrush(Color.FromRgb(0x89, 0xDC, 0xEB)),
-    };
+        var brushes = new[]
+        {
+            new SolidColorBrush(Color.FromRgb(0x89, 0xB4, 0xFA)),
+            new SolidColorBrush(Color.FromRgb(0xCB, 0xA6, 0xF7)),
+            new SolidColorBrush(Color.FromRgb(0xF3, 0x8B, 0xA8)),
+            new SolidColorBrush(Color.FromRgb(0xA6, 0xE3, 0xA1)),
+            new SolidColorBrush(Color.FromRgb(0xF9, 0xE2, 0xAF)),
+            new SolidColorBrush(Color.FromRgb(0x89, 0xDC, 0xEB)),
+        };
+        foreach (var b in brushes) b.Freeze();
+        return brushes;
+    }
+
+    private static Pen CreateBorderPen()
+    {
+        var pen = new Pen(Brushes.White, 1);
+        pen.Freeze();
+        return pen;
+    }
+
+    private static Brush CreateTextBrush()
+    {
+        var b = new SolidColorBrush(Colors.Black);
+        b.Freeze();
+        return b;
+    }
 
     private readonly List<(FolderNode Node, Rect Rect, Brush Fill)> _rects = new();
 
@@ -44,7 +69,6 @@ public class TreeMapPanel : Panel
     protected override Size ArrangeOverride(Size finalSize)
     {
         _rects.Clear();
-        InternalChildren.Clear();
 
         if (RootNode is null || RootNode.TotalSize == 0) return finalSize;
 
@@ -78,24 +102,23 @@ public class TreeMapPanel : Panel
             y += height;
         }
 
-        InvalidateVisual();
     }
 
     protected override void OnRender(DrawingContext dc)
     {
         base.OnRender(dc);
-        var textBrush = new SolidColorBrush(Colors.Black);
+        double dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
         foreach (var (node, rect, fill) in _rects)
         {
-            dc.DrawRectangle(fill, new Pen(Brushes.White, 1), rect);
+            dc.DrawRectangle(fill, _borderPen, rect);
             if (rect.Width > 40 && rect.Height > 20)
             {
                 var ft = new FormattedText(
                     $"{node.Name}\n{FormatSize(node.TotalSize)}",
                     System.Globalization.CultureInfo.CurrentCulture,
                     FlowDirection.LeftToRight,
-                    new Typeface("Segoe UI"),
-                    10, textBrush, 96);
+                    _typeface,
+                    10, _textBrush, dpi);
                 dc.DrawText(ft, new Point(rect.X + 4, rect.Y + 4));
             }
         }
