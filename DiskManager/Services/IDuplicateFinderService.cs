@@ -4,5 +4,9 @@ namespace DiskManager.Services;
 
 public interface IDuplicateFinderService
 {
-    IAsyncEnumerable<DuplicateGroup> FindDuplicatesAsync(string path, CancellationToken ct = default);
+    Task<IEnumerable<DuplicateGroup>> FindAsync(
+        string rootPath,
+        DuplicateMethod method,
+        IProgress<int>? progress,
+        CancellationToken ct = default);
 }
