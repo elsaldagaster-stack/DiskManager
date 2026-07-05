@@ -1,7 +1,77 @@
 <UserControl x:Class="DiskManager.Views.DiskAnalyzerView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:DiskManager.Converters"
+             xmlns:ctrl="clr-namespace:DiskManager.Controls">
+  <UserControl.Resources>
+    <conv:FileSizeConverter x:Key="SizeConv"/>
+  </UserControl.Resources>
+
+  <DockPanel Background="{DynamicResource AppBackground}">
+    <!-- Toolbar -->
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6"
+                Background="{DynamicResource SidebarBackground}">
+      <TextBlock Text="Unidad:" VerticalAlignment="Center" Margin="4,0"
+                 Foreground="{DynamicResource TextPrimary}"/>
+      <ComboBox ItemsSource="{Binding AvailableDrives}"
+                SelectedItem="{Binding SelectedDrive}"
+                Width="80" Margin="4,2"/>
+      <Button Content="▶ Escanear" Command="{Binding ScanCommand}"
+              IsEnabled="{Binding IsNotScanning}"
+              Margin="4,2" Background="{DynamicResource SuccessBrush}"/>
+      <Button Content="■ Detener" Command="{Binding StopScanCommand}"
+              IsEnabled="{Binding IsScanning}" Margin="4,2"/>
+      <TextBlock Text="{Binding ProgressText}" VerticalAlignment="Center" Margin="8,0"
+                 Foreground="{DynamicResource TextSecondary}"/>
+    </StackPanel>
+
+    <!-- Drive usage bar -->
+    <StackPanel DockPanel.Dock="Top" Margin="8,4">
+      <TextBlock Foreground="{DynamicResource TextSecondary}" FontSize="11">
+        <TextBlock.Text>
+          <MultiBinding StringFormat="{}{0} — {1} usados de {2}">
+            <Binding Path="SelectedDrive"/>
+            <Binding Path="DriveUsage.UsedBytes" Converter="{StaticResource SizeConv}"/>
+            <Binding Path="DriveUsage.TotalBytes" Converter="{StaticResource SizeConv}"/>
+          </MultiBinding>
+        </TextBlock.Text>
+      </TextBlock>
+      <ProgressBar Height="8" Margin="0,3"
+                   Maximum="{Binding DriveUsage.TotalBytes}"
+                   Value="{Binding DriveUsage.UsedBytes}"
+                   Background="{DynamicResource BorderBrush}"
+                   Foreground="{DynamicResource AccentBrush}"/>
+    </StackPanel>
+
+    <!-- Main panels -->
     <Grid>
-        <!-- Stub — implemented in Task 9 -->
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="4"/>
+        <ColumnDefinition Width="220"/>
+      </Grid.ColumnDefinitions>
+
+      <!-- TreeMap -->
+      <ctrl:TreeMapPanel Grid.Column="0"
+                         RootNode="{Binding RootNode}"
+                         NodeClickCommand="{Binding OpenInExplorerCommand}"
+                         Background="{DynamicResource PanelBackground}"/>
+
+      <GridSplitter Grid.Column="1" Width="4" HorizontalAlignment="Stretch"/>
+
+      <!-- Top folders list -->
+      <ListView Grid.Column="2"
+                ItemsSource="{Binding TopFolders}"
+                Background="{DynamicResource PanelBackground}"
+                Foreground="{DynamicResource TextPrimary}">
+        <ListView.View>
+          <GridView>
+            <GridViewColumn Header="Carpeta" Width="120" DisplayMemberBinding="{Binding Name}"/>
+            <GridViewColumn Header="Tamaño" Width="80"
+                            DisplayMemberBinding="{Binding TotalSize, Converter={StaticResource SizeConv}}"/>
+          </GridView>
+        </ListView.View>
+      </ListView>
     </Grid>
+  </DockPanel>
 </UserControl>
