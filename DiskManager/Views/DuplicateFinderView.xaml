@@ -22,7 +22,10 @@
       <ComboBox ItemsSource="{Binding Methods}" SelectedItem="{Binding SelectedMethod}"
                 Width="120" Margin="2"/>
       <Button Content="&#9654; Buscar" Command="{Binding SearchCommand}" Margin="6,2"
+              IsEnabled="{Binding IsNotSearching}"
               Background="{DynamicResource AccentBrush}"/>
+      <Button Content="&#9632; Detener" Command="{Binding StopSearchCommand}" Margin="4,2"
+              IsEnabled="{Binding IsSearching}"/>
     </StackPanel>
 
     <!-- Progress bar (visible only when searching) -->

@@ -6,26 +6,43 @@ namespace DiskManager.Services;
 
 public class DuplicateFinderService : IDuplicateFinderService
 {
+    private const int RecallOnDataAccess = 0x00400000;
+    private static bool IsCloudOnly(FileAttributes attrs) => ((int)attrs & RecallOnDataAccess) != 0;
+
+    public int LastCloudOnlySkipped { get; private set; }
+
     public async Task<IEnumerable<DuplicateGroup>> FindAsync(
         string rootPath,
         DuplicateMethod method,
         IProgress<int>? progress,
         CancellationToken ct = default)
     {
-        return await Task.Run(() => Find(rootPath, method, progress, ct), ct);
+        var (groups, cloudSkipped) = await Task.Run(() => Find(rootPath, method, progress, ct), ct);
+        LastCloudOnlySkipped = cloudSkipped;
+        return groups;
     }
 
-    private static IEnumerable<DuplicateGroup> Find(
+    private static (IEnumerable<DuplicateGroup> Groups, int CloudSkipped) Find(
         string rootPath, DuplicateMethod method,
         IProgress<int>? progress, CancellationToken ct)
     {
+        int cloudSkipped = 0;
         var options = new EnumerationOptions
         {
             RecurseSubdirectories = true,
             IgnoreInaccessible = true
         };
         var files = Directory.EnumerateFiles(rootPath, "*", options)
-            .Where(f => { try { return new FileInfo(f).Length > 0; } catch { return false; } })
+            .Where(f =>
+            {
+                try
+                {
+                    var fi = new FileInfo(f);
+                    if (IsCloudOnly(fi.Attributes)) { cloudSkipped++; return false; }
+                    return fi.Length > 0;
+                }
+                catch { return false; }
+            })
             .ToList();
 
         var grouped = method switch
@@ -36,7 +53,7 @@ public class DuplicateFinderService : IDuplicateFinderService
             _ => throw new ArgumentOutOfRangeException(nameof(method))
         };
 
-        return grouped.Where(g => g.Paths.Count > 1);
+        return (grouped.Where(g => g.Paths.Count > 1), cloudSkipped);
     }
 
     private static IEnumerable<DuplicateGroup> GroupByHash(

@@ -5,6 +5,11 @@ namespace DiskManager.Services;
 
 public class DiskAnalyzerService : IDiskAnalyzerService
 {
+    // FILE_ATTRIBUTE_RECALL_ON_DATA_ACCESS — set by OneDrive, Google Drive, etc. on cloud-only files
+    private const int RecallOnDataAccess = 0x00400000;
+    // Option B (future): expose IncludeCloudFiles toggle on ScanAsync to count cloud sizes too
+    private static bool IsCloudOnly(FileAttributes attrs) => ((int)attrs & RecallOnDataAccess) != 0;
+
     public async Task<FolderNode> ScanAsync(string rootPath, IProgress<string>? progress, CancellationToken ct = default)
     {
         return await Task.Run(() => ScanDirectory(rootPath, progress, ct), ct);
@@ -26,7 +31,12 @@ public class DiskAnalyzerService : IDiskAnalyzerService
             foreach (var file in Directory.EnumerateFiles(path))
             {
                 ct.ThrowIfCancellationRequested();
-                try { node.TotalSize += new FileInfo(file).Length; }
+                try
+                {
+                    var fi = new FileInfo(file);
+                    if (IsCloudOnly(fi.Attributes)) { node.CloudOnlyFiles++; continue; }
+                    node.TotalSize += fi.Length;
+                }
                 catch (IOException) { }
             }
 
@@ -38,6 +48,7 @@ public class DiskAnalyzerService : IDiskAnalyzerService
                     var child = ScanDirectory(dir, progress, ct);
                     node.TotalSize += child.TotalSize;
                     node.SkippedFolders += child.SkippedFolders;
+                    node.CloudOnlyFiles += child.CloudOnlyFiles;
                     node.Children.Add(child);
                 }
                 catch (UnauthorizedAccessException) { node.SkippedFolders++; }

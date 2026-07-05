@@ -64,8 +64,13 @@ public partial class DiskAnalyzerViewModel : ObservableObject, IDisposable
             RootNode = await _analyzer.ScanAsync(rootPath, progress, _cts.Token);
             TopFolders = new ObservableCollection<FolderNode>(
                 RootNode.Children.OrderByDescending(c => c.TotalSize).Take(20));
-            ProgressText = RootNode.SkippedFolders > 0
-                ? $"Listo. {RootNode.SkippedFolders} carpeta(s) inaccesible(s) omitida(s)."
+            var parts = new System.Collections.Generic.List<string>();
+            if (RootNode.SkippedFolders > 0)
+                parts.Add($"{RootNode.SkippedFolders} carpeta(s) inaccesible(s)");
+            if (RootNode.CloudOnlyFiles > 0)
+                parts.Add($"{RootNode.CloudOnlyFiles} archivo(s) solo en nube");
+            ProgressText = parts.Count > 0
+                ? $"Listo. Omitidos: {string.Join(", ", parts)}."
                 : "Listo.";
         }
         catch (OperationCanceledException) { ProgressText = "Cancelado."; }

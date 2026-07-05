@@ -17,7 +17,10 @@ public partial class DuplicateFinderViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string _rootPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     [ObservableProperty] private DuplicateMethod _selectedMethod = DuplicateMethod.HashMD5;
     [ObservableProperty] private ObservableCollection<DuplicateGroupViewModel> _groups = new();
-    [ObservableProperty] private bool _isSearching;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsNotSearching))]
+    private bool _isSearching;
+    public bool IsNotSearching => !IsSearching;
     [ObservableProperty] private int _progressValue;
     [ObservableProperty] private string _statusText = string.Empty;
 
@@ -63,14 +66,20 @@ public partial class DuplicateFinderViewModel : ObservableObject, IDisposable
             var results = await _finder.FindAsync(RootPath, SelectedMethod, progress, _cts.Token);
             foreach (var group in results.OrderByDescending(g => g.WastedBytes))
                 Groups.Add(new DuplicateGroupViewModel(group));
+            var cloudNote = _finder.LastCloudOnlySkipped > 0
+                ? $" · {_finder.LastCloudOnlySkipped} archivo(s) solo en nube omitidos"
+                : string.Empty;
             StatusText = Groups.Count == 0
-                ? "No se encontraron duplicados."
-                : $"{Groups.Count} grupos · {FormatSize(Groups.Sum(g => g.Group.WastedBytes))} recuperables";
+                ? $"No se encontraron duplicados.{cloudNote}"
+                : $"{Groups.Count} grupos · {FormatSize(Groups.Sum(g => g.Group.WastedBytes))} recuperables{cloudNote}";
         }
         catch (OperationCanceledException) { StatusText = "Búsqueda cancelada."; }
         catch (Exception ex) { StatusText = $"Error: {ex.Message}"; }
         finally { IsSearching = false; }
     }
+
+    [RelayCommand]
+    private void StopSearch() => _cts?.Cancel();
 
     [RelayCommand]
     private async Task DeleteSelectedAsync()
