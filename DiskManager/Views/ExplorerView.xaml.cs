@@ -23,6 +23,9 @@ public partial class ExplorerView : UserControl
     private void DriveItem_DoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (DataContext is ExplorerViewModel vm && sender is TreeViewItem { Tag: string path })
+        {
             vm.NavigateToCommand.Execute(path);
+            e.Handled = true;
+        }
     }
 }

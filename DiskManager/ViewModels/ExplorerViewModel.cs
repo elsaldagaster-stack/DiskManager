@@ -122,7 +122,12 @@ public partial class ExplorerViewModel : ObservableObject
             StatusText = $"{Items.Count} elementos";
         }
         catch (Exception ex) { StatusText = $"Error: {ex.Message}"; }
-        finally { IsBusy = false; }
+        finally
+        {
+            IsBusy = false;
+            GoBackCommand.NotifyCanExecuteChanged();
+            GoForwardCommand.NotifyCanExecuteChanged();
+        }
     }
 
     private Task RefreshAsync() => LoadPathAsync(CurrentPath);
